@@ -17,7 +17,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-const dsn = "root:root@tcp(localhost:3306)/test?timeout=3s&writeTimeout=5s&readTimeout=2s&charset=utf8&parseTime=true&loc=Local"
+const dsn = "root:root@tcp(10.0.0.3:3306)/test?timeout=3s&writeTimeout=5s&readTimeout=2s&charset=utf8&parseTime=true&loc=Local"
 
 func init() {
 	DebugSetupProvider()
@@ -97,6 +97,12 @@ func TestGoBulkWrite(t *testing.T) {
 			faker.FakeData(ob)
 			WriteInsert(ob)
 		}()
+		go func(id int) {
+			ob2 := &model.UserOperateRecords{}
+			faker.FakeData(ob2)
+			ob2.ID = id
+			WriteInsert(ob2)
+		}(i + 1)
 	}
 
 	// 等待系统终止信号

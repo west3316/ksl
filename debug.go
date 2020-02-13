@@ -19,7 +19,12 @@ func init() {
 func DebugTruncate() {
 	_, err := _db.Exec("TRUNCATE TABLE `user_charge`")
 	if err != nil {
-		log.Fatalln("TRUNCATE TABLE failed!")
+		log.Fatalln("TRUNCATE TABLE user_charge failed!")
+	}
+
+	_, err = _db.Exec("TRUNCATE TABLE `user_operate_records`")
+	if err != nil {
+		log.Fatalln("TRUNCATE TABLE user_operate_records failed!")
 	}
 }
 

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -76,20 +77,43 @@ func syncBulkFileToDB() {
 		return
 	}
 
+	// 按照时间排序，防止主键自增时顺序错乱
+	sort.SliceStable(fis, func(i, j int) bool {
+		ti := fis[i].ModTime()
+		tj := fis[j].ModTime()
+		return ti.Before(tj) || (ti.Equal(tj) && extractAccessTimes(fis[i].Name()) < extractAccessTimes(fis[j].Name()))
+	})
+
+	fnSyncFile := func(fChan chan string) {
+		for {
+			select {
+			case filename := <-fChan:
+				// log.Println("同步开始：", filename)
+				if syncToMySQL(filename) {
+					// 同步成功后删除数据文件
+					os.Remove(filename)
+				}
+			}
+		}
+	}
+
+	fileChan := make(map[string]chan string)
 	for _, fi := range fis {
 		if fi.IsDir() || filepath.Ext(fi.Name()) != dataSuffix || fi.Size() == 0 {
 			continue
 		}
 
-		tableName := extractTableName(fi.Name())
 		filename := filepath.Join(storeDir, fi.Name())
-		go func(filename, tableName string) {
-			// log.Println("同步开始：", filename)
-			if syncToMySQL(filename) {
-				// 同步成功后删除数据文件
-				os.Remove(filename)
-			}
-		}(filename, tableName)
+		tableName := extractTableName(fi.Name())
+
+		fChan, exist := fileChan[tableName]
+		if !exist {
+			fChan = make(chan string)
+			fileChan[tableName] = fChan
+			go fnSyncFile(fChan)
+		}
+
+		fChan <- filename
 	}
 }
 
@@ -97,7 +121,9 @@ func syncToMySQL(filename string) (ok bool) {
 	for hasNext := true; hasNext; {
 		fi, err := os.Stat(filename)
 		if err != nil {
-			log.Println("读取文件信息失败：", err)
+			if !errors.Is(err, os.ErrNotExist) {
+				log.Println("读取文件信息失败：", err)
+			}
 			return
 		}
 
@@ -124,8 +150,9 @@ func syncToMySQL(filename string) (ok bool) {
 	// 获得字段名
 	fields := strings.Split(header, " ")
 	// 生成批量插入语句
-	sqlInsertText := sqlxBulkInsertSQL(extractTableName(filename), fields)
-	sqlUpdateText := sqlxUpdateSQL(extractTableName(filename), fields)
+	tableName := extractTableName(filename)
+	sqlInsertText := sqlxBulkInsertSQL(tableName, fields)
+	sqlUpdateText := sqlxUpdateSQL(tableName, fields)
 
 	var opChar byte
 	var value map[string]interface{}
@@ -174,9 +201,6 @@ func syncToMySQL(filename string) (ok bool) {
 	}
 
 	// log.Println("DB同步完成["+filename+"]：")
-	// 标记同步完成
-	removeJob(filename)
-
 	return true
 }
 

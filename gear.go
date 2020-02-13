@@ -5,7 +5,9 @@ import (
 	"os/signal"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -48,18 +50,6 @@ func dirExists(filename string) bool {
 		return false
 	}
 	return info.IsDir()
-}
-
-func extractTableName(filename string) string {
-	_, filename = filepath.Split(filename)
-	var idx = len(filename)
-	for n := 0; n < 2; n++ {
-		idx = strings.LastIndex(filename[:idx], "_")
-		if idx == -1 {
-			return ""
-		}
-	}
-	return filename[:idx]
 }
 
 // fieldsFromStruct 从struct中获取数据表字段
@@ -111,6 +101,10 @@ func sqlxBulkInsertSQL(table string, fields []string) string {
 			continue
 		}
 
+		if isKeyPrefix(field[0]) {
+			field = field[1:]
+		}
+
 		tableFields += "`" + field + "`,"
 		valuesFields += ":" + field + ","
 	}
@@ -146,4 +140,50 @@ func WaitOSSignal(sig ...os.Signal) {
 	waitSig := make(chan os.Signal)
 	signal.Notify(waitSig, sig...)
 	<-waitSig
+}
+
+func getFileName(filename string) string {
+	_, f := filepath.Split(filename)
+	return f[:len(f)-len(filepath.Ext(f))]
+}
+
+type filenameDetail struct {
+	TableName   string
+	CreateAt    time.Time
+	AccessTimes int
+}
+
+func (c *filenameDetail) Extract(filename string) bool {
+	parts := strings.Split(getFileName(filename), "-")
+	ts, err := strconv.ParseInt(parts[1], 10, 64)
+	if err != nil {
+		return false
+	}
+	c.CreateAt = time.Unix(ts, 0)
+	accessTimes, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return false
+	}
+	c.AccessTimes = accessTimes
+	c.TableName = parts[0]
+	return true
+}
+
+func (c filenameDetail) Make() string {
+	return filepath.Join(storeDir, c.TableName+
+		"-"+strconv.FormatInt(c.CreateAt.Unix(), 10)+"-"+
+		strconv.Itoa(c.AccessTimes)+
+		dataSuffix)
+}
+
+func extractTableName(filename string) string {
+	fnd := &filenameDetail{}
+	fnd.Extract(filename)
+	return fnd.TableName
+}
+
+func extractAccessTimes(filename string) int {
+	fnd := &filenameDetail{}
+	fnd.Extract(filename)
+	return fnd.AccessTimes
 }

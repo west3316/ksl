@@ -13,17 +13,27 @@ func Test_fieldsFromStruct(t *testing.T) {
 
 // go test -v -count=1 github.com/west3316/ksl  -run=Test_sqlxBulkInsertSQL
 func Test_sqlxBulkInsertSQL(t *testing.T) {
-	sqlText := sqlxBulkInsertSQL("user_charge", fieldsFromStruct(&model.UserCharge{}, "db"))
+	ob := &model.UserCharge{}
+	sqlText := sqlxBulkInsertSQL(ob.TableName(), fieldsFromStruct(ob, "db"))
+	t.Log(sqlText)
+
+	ob2 := &model.UserOperateRecords{}
+	sqlText = sqlxBulkInsertSQL(ob2.TableName(), fieldsFromStruct(ob2, "db"))
 	t.Log(sqlText)
 }
 
 // go test -v -count=1 github.com/west3316/ksl  -run=Test_sqlxUpdateSQL
 func Test_sqlxUpdateSQL(t *testing.T) {
-	sqlText := sqlxUpdateSQL("user_charge", fieldsFromStruct(&model.UserCharge{}, "db"))
+	ob := &model.UserCharge{}
+	sqlText := sqlxBulkInsertSQL(ob.TableName(), fieldsFromStruct(ob, "db"))
+	t.Log(sqlText)
+
+	ob2 := &model.UserOperateRecords{}
+	sqlText = sqlxUpdateSQL(ob2.TableName(), fieldsFromStruct(ob2, "db"))
 	t.Log(sqlText)
 }
 
-// go test -v -count=1 github.com/west3316/ksl  -run=Test_extraceTableName
-func Test_extraceTableName(t *testing.T) {
-	t.Log(extractTableName("user_charge_1578637499_6.ksl"))
+// go test -v -count=1 github.com/west3316/ksl  -run=Test_extractTableName
+func Test_extractTableName(t *testing.T) {
+	t.Log(extractTableName("user_charge-1578637499-6.ksl"))
 }
