@@ -129,7 +129,9 @@ func sqlxUpdateSQL(table string, fields []string) string {
 
 		fieldValues += "`" + field + "`=:" + field + ","
 	}
-	pk = pk[:len(pk)-5]
+	if len(pk) != 0 {
+		pk = pk[:len(pk)-5]
+	}
 	fieldValues = fieldValues[:len(fieldValues)-1]
 
 	return "UPDATE " + table + " SET " + fieldValues + " WHERE " + pk
@@ -148,13 +150,15 @@ func sqlxDeleteSQL(table string, fields []string) string {
 			continue
 		}
 	}
-	pk = pk[:len(pk)-5]
+	if len(pk) != 0 {
+		pk = pk[:len(pk)-5]
+	}
 
 	return "DELETE FROM " + table + " WHERE " + pk
 }
 
-// WaitOSSignal 等待系统信号
-func WaitOSSignal(sig ...os.Signal) {
+// waitOSSignal 等待系统信号
+func waitOSSignal(sig ...os.Signal) {
 	waitSig := make(chan os.Signal)
 	signal.Notify(waitSig, sig...)
 	<-waitSig
