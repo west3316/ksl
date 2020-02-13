@@ -127,6 +127,27 @@ func TestGoBulkWrite(t *testing.T) {
 	t.Log(time.Since(tm))
 }
 
+// go test -v -count=1 github.com/west3316/ksl -run=TestDelayUpdateWrite
+func TestDelayUpdateWrite(t *testing.T) {
+	Init(Option{
+		DSN:            dsn,
+		SyncValueCount: 100,
+		SyncTimeout:    3,
+		BulkSize:       100,
+	})
+
+	DebugTruncate()
+
+	ob := &model.UserOperateRecords{}
+	faker.FakeData(ob)
+	WriteInsert(ob)
+
+	time.Sleep(time.Second * 4)
+	ob.Type = "TestDelayUpdateWrite"
+	WriteUpdate(ob)
+	time.Sleep(time.Second * 8)
+}
+
 // go test -v -count=1 github.com/west3316/ksl -run Test_decodeArrayToMap
 func Test_decodeArrayToMap(t *testing.T) {
 	filename := "sqlData/user_charge_1581499298_1.ksl"
@@ -156,6 +177,7 @@ func Test_decodeArrayToMap(t *testing.T) {
 		if err == nil || err == io.EOF {
 			if len(value) != 0 {
 				values = append(values, value)
+				log.Println("value:", value)
 			}
 		} else {
 			log.Println("decodeArrayToMap错误:", err)
