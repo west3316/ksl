@@ -90,13 +90,25 @@ func TestGoBulkWrite(t *testing.T) {
 
 	DebugTruncate()
 
+	var updateCount int
 	tm := time.Now()
 	for i := 0; i < 1000; i++ {
-		go func() {
+		go func(i int) {
 			ob := &model.UserCharge{}
 			faker.FakeData(ob)
 			WriteInsert(ob)
-		}()
+
+			if i%10 == 0 {
+				ob2 := &model.UserCharge{}
+				faker.FakeData(ob2)
+				ob2.ID = i + 1
+				s := "更新测试数据"
+				ob2.Desc = &s
+				WriteUpdate(ob2)
+				updateCount++
+			}
+		}(i)
+
 		go func(id int) {
 			ob2 := &model.UserOperateRecords{}
 			faker.FakeData(ob2)
@@ -105,6 +117,7 @@ func TestGoBulkWrite(t *testing.T) {
 		}(i + 1)
 	}
 
+	t.Log("更新测试数据", updateCount)
 	// 等待系统终止信号
 	WaitOSSignal(syscall.SIGTERM, os.Interrupt)
 	t.Log(time.Since(tm))
