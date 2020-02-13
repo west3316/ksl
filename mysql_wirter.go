@@ -91,7 +91,11 @@ func syncBulkFileToDB() {
 				// log.Println("同步开始：", filename)
 				if syncToMySQL(filename) {
 					// 同步成功后删除数据文件
-					os.Remove(filename)
+					err = os.Remove(filename)
+					if err == nil {
+						// 重置
+						resetWriteFile(extractTableName(filename))
+					}
 				}
 			}
 		}
@@ -215,7 +219,7 @@ func syncToMySQL(filename string) (ok bool) {
 		return
 	}
 
-	// log.Println("DB同步完成["+filename+"]：")
+	// log.Println("DB同步完成["+filename+"]：", len(insertValues), len(updateValues), len(deleteValues))
 	return true
 }
 

@@ -26,9 +26,13 @@ func resetWriteFile(tableName string) {
 	}
 
 	ctx := v.(*writeOpContext)
+	if ctx.File == nil {
+		return
+	}
+
 	err := ctx.File.Chmod(0600)
 	if err != nil {
-		log.Println("修改文件失败", 1, "：", err)
+		log.Println("修改文件失败：", err)
 	}
 	ctx.File.Close()
 	// 是否文件对象
