@@ -86,16 +86,14 @@ func syncBulkFileToDB() {
 
 	fnSyncFile := func(fChan chan string) {
 		for {
-			select {
-			case filename := <-fChan:
-				// log.Println("同步开始：", filename)
-				if syncToMySQL(filename) {
-					// 同步成功后删除数据文件
-					err = os.Remove(filename)
-					if err == nil {
-						// 重置
-						resetWriteFile(extractTableName(filename))
-					}
+			filename := <-fChan
+			// log.Println("同步开始：", filename)
+			if syncToMySQL(filename) {
+				// 同步成功后删除数据文件
+				err = os.Remove(filename)
+				if err == nil {
+					// 重置
+					resetWriteFile(extractTableName(filename))
 				}
 			}
 		}

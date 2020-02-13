@@ -42,7 +42,7 @@ func TestWrite(t *testing.T) {
 	WriteInsert(data)
 
 	// 等待系统终止信号
-	WaitOSSignal(syscall.SIGTERM, os.Interrupt)
+	waitOSSignal(syscall.SIGTERM, os.Interrupt)
 }
 
 // go test -v -count=1 github.com/west3316/ksl -run=TestBulkWrite
@@ -75,7 +75,7 @@ func TestBulkWrite(t *testing.T) {
 
 	t.Log("更新测试数据", updateCount)
 	// 等待系统终止信号
-	WaitOSSignal(syscall.SIGTERM, os.Interrupt)
+	waitOSSignal(syscall.SIGTERM, os.Interrupt)
 	t.Log(time.Since(tm))
 }
 
@@ -123,7 +123,7 @@ func TestGoBulkWrite(t *testing.T) {
 
 	t.Log("更新测试数据", updateCount)
 	// 等待系统终止信号
-	WaitOSSignal(syscall.SIGTERM, os.Interrupt)
+	waitOSSignal(syscall.SIGTERM, os.Interrupt)
 	t.Log(time.Since(tm))
 }
 

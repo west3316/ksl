@@ -49,7 +49,3 @@ func (c *opMgr) loadValue(key string) interface{} {
 	}
 	return nil
 }
-
-func (c *opMgr) removeOp(key string) {
-	c.ops.Delete(key)
-}
