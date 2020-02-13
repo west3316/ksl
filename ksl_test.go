@@ -114,6 +114,10 @@ func TestGoBulkWrite(t *testing.T) {
 			faker.FakeData(ob2)
 			ob2.ID = id
 			WriteInsert(ob2)
+
+			if id%10 == 5 {
+				WriteDelete(ob2)
+			}
 		}(i + 1)
 	}
 

@@ -153,11 +153,13 @@ func syncToMySQL(filename string) (ok bool) {
 	tableName := extractTableName(filename)
 	sqlInsertText := sqlxBulkInsertSQL(tableName, fields)
 	sqlUpdateText := sqlxUpdateSQL(tableName, fields)
+	sqlxDeleteText := sqlxDeleteSQL(tableName, fields)
 
 	var opChar byte
 	var value map[string]interface{}
 	var insertValues []map[string]interface{}
 	var updateValues []map[string]interface{}
+	var deleteValues []map[string]interface{}
 	decoder := msgpack.NewDecoder(reader)
 	for err == nil {
 		opChar, value, err = decodeArrayToMap(decoder, fields)
@@ -165,10 +167,15 @@ func syncToMySQL(filename string) (ok bool) {
 			if len(value) == 0 {
 				continue
 			}
-			if opChar == opInsert {
+
+			switch opChar {
+			case opInsert:
 				insertValues = append(insertValues, value)
-			} else if opChar == opUpdate {
+			case opUpdate:
 				updateValues = append(updateValues, value)
+			case opDelete:
+				deleteValues = append(deleteValues, value)
+			default:
 			}
 		} else {
 			log.Println("decodeArrayToMap错误:", err)
@@ -195,6 +202,14 @@ func syncToMySQL(filename string) (ok bool) {
 		}
 	}
 
+	// 逐条删除
+	for _, e := range deleteValues {
+		_, err2 := _db.NamedExec(sqlxDeleteText, e)
+		if err2 != nil {
+			log.Println("入库失败\nSQL语句：", sqlxDeleteText, "，错误：", err2)
+			return
+		}
+	}
 	if !errors.Is(err, io.EOF) {
 		log.Println("解析数据文件失败：", err)
 		return
@@ -215,11 +230,13 @@ func decodeArrayToMap(decoder *msgpack.Decoder, keys []string) (byte, map[string
 	}
 
 	// 获取操作符
-	var opChar uint8
-	opChar, err = decoder.DecodeUint8()
+	var v uint8
+	v, err = decoder.DecodeUint8()
 	if err != nil {
 		return 0, nil, errors.New("operate char format error")
 	}
+
+	opChar := byte(v)
 
 	l, err = decoder.DecodeArrayLen()
 	if err != nil {
@@ -237,8 +254,13 @@ func decodeArrayToMap(decoder *msgpack.Decoder, keys []string) (byte, map[string
 			return 0, nil, errors.New("decode error")
 		}
 
-		if byte(opChar) == opInsert && isAutoIncrementMark(key[0]) {
-			// 忽略自增字段
+		if opChar == opInsert && isAutoIncrementMark(key[0]) {
+			// 插入时，忽略自增字段
+			continue
+		}
+
+		if !isPrimaryKeyMark(key[0]) && opChar == opDelete {
+			// 删除时，只解析主键
 			continue
 		}
 
@@ -249,5 +271,5 @@ func decodeArrayToMap(decoder *msgpack.Decoder, keys []string) (byte, map[string
 		result[key] = v
 	}
 
-	return byte(opChar), result, nil
+	return opChar, result, nil
 }

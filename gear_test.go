@@ -25,11 +25,22 @@ func Test_sqlxBulkInsertSQL(t *testing.T) {
 // go test -v -count=1 github.com/west3316/ksl  -run=Test_sqlxUpdateSQL
 func Test_sqlxUpdateSQL(t *testing.T) {
 	ob := &model.UserCharge{}
-	sqlText := sqlxBulkInsertSQL(ob.TableName(), fieldsFromStruct(ob, "db"))
+	sqlText := sqlxUpdateSQL(ob.TableName(), fieldsFromStruct(ob, "db"))
 	t.Log(sqlText)
 
 	ob2 := &model.UserOperateRecords{}
 	sqlText = sqlxUpdateSQL(ob2.TableName(), fieldsFromStruct(ob2, "db"))
+	t.Log(sqlText)
+}
+
+// go test -v -count=1 github.com/west3316/ksl  -run=Test_sqlxDeleteSQL
+func Test_sqlxDeleteSQL(t *testing.T) {
+	ob := &model.UserCharge{}
+	sqlText := sqlxDeleteSQL(ob.TableName(), fieldsFromStruct(ob, "db"))
+	t.Log(sqlText)
+
+	ob2 := &model.UserOperateRecords{}
+	sqlText = sqlxDeleteSQL(ob2.TableName(), fieldsFromStruct(ob2, "db"))
 	t.Log(sqlText)
 }
 

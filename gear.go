@@ -123,16 +123,34 @@ func sqlxUpdateSQL(table string, fields []string) string {
 	for _, field := range fields {
 		if isKeyPrefix(field[0]) {
 			field = field[1:]
-			pk += "`" + field + "`=:" + field + ","
+			pk += "`" + field + "`=:" + field + " AND "
 			continue
 		}
 
 		fieldValues += "`" + field + "`=:" + field + ","
 	}
-	pk = pk[:len(pk)-1]
+	pk = pk[:len(pk)-5]
 	fieldValues = fieldValues[:len(fieldValues)-1]
 
 	return "UPDATE " + table + " SET " + fieldValues + " WHERE " + pk
+}
+
+func sqlxDeleteSQL(table string, fields []string) string {
+	if len(fields) == 0 {
+		return ""
+	}
+
+	var pk string
+	for _, field := range fields {
+		if isPrimaryKeyMark(field[0]) {
+			field = field[1:]
+			pk += "`" + field + "`=:" + field + " AND "
+			continue
+		}
+	}
+	pk = pk[:len(pk)-5]
+
+	return "DELETE FROM " + table + " WHERE " + pk
 }
 
 // WaitOSSignal 等待系统信号

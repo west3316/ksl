@@ -17,6 +17,7 @@ const dataSuffix = ".ksl"
 const (
 	opInsert = 'C'
 	opUpdate = 'U'
+	opDelete = 'D'
 )
 
 type valueWarpper struct {
@@ -43,6 +44,10 @@ func WriteUpdate(v IValue) {
 	write(v, opUpdate)
 }
 
+// WriteDelete 删除数据
+func WriteDelete(v IValue) {
+	write(v, opDelete)
+}
 func initDataDir() {
 	// 创建数据存储目录
 	if !dirExists(storeDir) {
