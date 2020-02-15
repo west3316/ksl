@@ -15,7 +15,7 @@ ksl（开塞露）是一个mysql（或mariadb）操作库，实现了数据异�
 go get github.com/west3316/ksl
 ```
 
-ksl 提供三个数据操作接口 `WriteInsert、 WriteUpdate、WriteDelete`，传入参数 value 除了需要实现接口 TableName，还需要使用 `db` tag 指明表中的字段名，类似 json 解析，和用 `mark` tag标记主键字段和自增字段。这些都可以使用[auto-model](https://github.com/west3316/auto-model)工具来自动完成。
+ksl 提供三个数据操作方法 `WriteInsert、 WriteUpdate、WriteDelete`，传入参数 value 除了需要实现`TableName`方法 ，还需要使用 `db` tag 指明表中的字段名，类似 json 解析，和用 `mark` tag标记主键字段和自增字段。这些都可以使用[auto-model](https://github.com/west3316/auto-model)工具来自动完成。
 
 ```go
 import (
@@ -27,18 +27,17 @@ const dsn = "root:root@tcp(localhost:3306)/test?timeout=3s&writeTimeout=5s&readT
 func main() {
     ksl.Init(ksl.Option{
     // 数据库连接 DSN 
-		DSN: dsn,
+    DSN: dsn,
     // 每个数据文件最多记录30条数据
-		BulkSize: 30,
+    BulkSize: 30,
     // 每隔2秒将未入库数据库文件同步到数据库
     SyncTimeout: 2,
     // 数据条数达到30条，立即同步到数据库
     // 与SyncTimeout一同使用，分散入库时间点，防止拥塞
     SyncValueCount: 30,
-	})
+    })
 
   // model.UserCharge 根据数据表生成的go结构，采用auto-model工具生成
-  // 此方法并发安全
   // 批量写入采用了sqlx库，struct的成员变量必须定义db tag
   ksl.WriteInsert(&model.UserCharge{})
   
@@ -49,3 +48,5 @@ func main() {
   ksl.WriteDelete(&model.UserCharge{ID: 10})
 }
 ```
+
+`WriteInsert、 WriteUpdate、WriteDelete`并发安全，可以放心的用与多协程中。
